@@ -98,7 +98,7 @@ public class YouTubePlaybackFactory implements PlaybackFactory {
   @Nonnull
   private static String loadHtml(@Nonnull String fileName) {
     try (InputStream in = YouTubePlayback.class.getResourceAsStream(fileName);
-      BufferedReader reader = new BufferedReader(new InputStreamReader(in, "utf-8"))) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in, "utf-8"))) {
       StringBuilder builder = new StringBuilder(512);
       for (String line = reader.readLine(); line != null; line = reader.readLine()) {
         builder.append(line).append('\n');

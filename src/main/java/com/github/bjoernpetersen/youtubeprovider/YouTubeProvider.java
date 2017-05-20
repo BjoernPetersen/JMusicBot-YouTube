@@ -61,13 +61,13 @@ public class YouTubeProvider implements Provider {
   public void initialize(@Nonnull PlaybackFactoryManager manager) throws InitializationException {
     playbackFactory = manager.getFactory(YouTubePlaybackFactory.class);
     youtube = new YouTube.Builder(
-      new NetHttpTransport(),
-      JacksonFactory.getDefaultInstance(),
-      httpRequest -> {
-      }
+        new NetHttpTransport(),
+        JacksonFactory.getDefaultInstance(),
+        httpRequest -> {
+        }
     ).setApplicationName("music-bot").build();
     apiKey = apiKeyEntry.get()
-      .orElseThrow(() -> new InitializationException("Missing YouTube API key."));
+        .orElseThrow(() -> new InitializationException("Missing YouTube API key."));
   }
 
   @Override
@@ -83,12 +83,12 @@ public class YouTubeProvider implements Provider {
   @Nonnull
   private Song createSong(@Nonnull String id, @Nonnull String title, @Nonnull String description) {
     return new Song(
-      playbackSupplier,
-      songLoader,
-      getName(),
-      id,
-      title,
-      description
+        playbackSupplier,
+        songLoader,
+        getName(),
+        id,
+        title,
+        description
     );
   }
 
@@ -97,11 +97,11 @@ public class YouTubeProvider implements Provider {
   public List<Song> search(@Nonnull String query) {
     try {
       return youtube.search().list(SEARCH_RESULT_PARTS)
-        .setKey(apiKey)
-        .setQ(query)
-        .execute().getItems().stream()
-        .map(this::getSongFromSearchResult)
-        .collect(Collectors.toList());
+          .setKey(apiKey)
+          .setQ(query)
+          .execute().getItems().stream()
+          .map(this::getSongFromSearchResult)
+          .collect(Collectors.toList());
     } catch (IOException e) {
       log.severe("IOException during search: " + e);
       return Collections.emptyList();
@@ -121,9 +121,9 @@ public class YouTubeProvider implements Provider {
     List<SearchResult> results;
     try {
       results = youtube.search().list(SEARCH_RESULT_PARTS)
-        .setKey(apiKey)
-        .setQ(id)
-        .execute().getItems();
+          .setKey(apiKey)
+          .setQ(id)
+          .execute().getItems();
     } catch (IOException e) {
       log.severe("Error looking up song: " + e);
       throw new NoSuchSongException(e);
