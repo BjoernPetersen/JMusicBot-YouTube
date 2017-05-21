@@ -37,15 +37,6 @@
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
   </distributionManagement>
-  <repositories>
-    <repository>
-      <id>ossrh-snapshots</id>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-    </repository>
-  </repositories>
   <dependencies>
     <dependency>
       <artifactId>junit</artifactId>
@@ -62,7 +53,7 @@
     <dependency>
       <groupId>com.github.bjoernpetersen</groupId>
       <artifactId>musicbot</artifactId>
-      <version>0.0.2-SNAPSHOT</version>
+      <version>0.1.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
