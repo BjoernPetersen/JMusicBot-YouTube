@@ -91,7 +91,7 @@ public class YouTubePlaybackFactory implements PlaybackFactory {
   }
 
   @Nonnull
-  public Playback createPlayback(String id) {
+  public Playback createPlayback(String id) throws IOException {
     return new YouTubePlayback(engine, id);
   }
 
