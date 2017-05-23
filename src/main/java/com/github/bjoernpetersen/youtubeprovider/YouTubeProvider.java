@@ -30,25 +30,13 @@ public class YouTubeProvider implements Provider {
   @Nonnull
   private static final Logger log = Logger.getLogger(YouTubeProvider.class.getName());
 
-  private PlaybackSupplier playbackSupplier;
-  private SongLoader songLoader;
+  private Song.Builder songBuilder;
 
   private YouTubePlaybackFactory playbackFactory;
   private Config.StringEntry apiKeyEntry;
 
   private YouTube youtube;
   private String apiKey;
-
-  public YouTubeProvider() {
-    playbackSupplier = new PlaybackSupplier() {
-      @Nonnull
-      @Override
-      public Playback supply(Song song) throws IOException {
-        return playbackFactory.createPlayback(song.getId());
-      }
-    };
-    songLoader = SongLoader.DUMMY;
-  }
 
   @Nonnull
   @Override
@@ -68,6 +56,20 @@ public class YouTubeProvider implements Provider {
     ).setApplicationName("music-bot").build();
     apiKey = apiKeyEntry.get()
         .orElseThrow(() -> new InitializationException("Missing YouTube API key."));
+    songBuilder = initializeSongBuilder();
+  }
+
+  private Song.Builder initializeSongBuilder() {
+    return new Song.Builder()
+        .playbackSupplier(new PlaybackSupplier() {
+          @Nonnull
+          @Override
+          public Playback supply(Song song) throws IOException {
+            return playbackFactory.createPlayback(song.getId());
+          }
+        })
+        .songLoader(SongLoader.DUMMY)
+        .provider(this);
   }
 
   @Override
@@ -78,18 +80,15 @@ public class YouTubeProvider implements Provider {
 
   @Override
   public void close() throws IOException {
+    playbackFactory = null;
+    youtube = null;
+    apiKey = null;
+    songBuilder = null;
   }
 
   @Nonnull
   private Song createSong(@Nonnull String id, @Nonnull String title, @Nonnull String description) {
-    return new Song(
-        playbackSupplier,
-        songLoader,
-        getName(),
-        id,
-        title,
-        description
-    );
+    return songBuilder.id(id).title(title).description(description).build();
   }
 
   @Nonnull
