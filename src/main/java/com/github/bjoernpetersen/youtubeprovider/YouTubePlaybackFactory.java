@@ -1,5 +1,6 @@
 package com.github.bjoernpetersen.youtubeprovider;
 
+import com.github.bjoernpetersen.jmusicbot.InitStateWriter;
 import com.github.bjoernpetersen.jmusicbot.InitializationException;
 import com.github.bjoernpetersen.jmusicbot.config.Config;
 import com.github.bjoernpetersen.jmusicbot.config.Config.Entry;
@@ -43,7 +44,8 @@ public class YouTubePlaybackFactory implements PlaybackFactory {
   }
 
   @Override
-  public void initialize() throws InitializationException {
+  public void initialize(@Nonnull InitStateWriter initStateWriter)
+      throws InitializationException, InterruptedException {
     Lock lock = new ReentrantLock();
     Condition loaded = lock.newCondition();
 
@@ -64,17 +66,19 @@ public class YouTubePlaybackFactory implements PlaybackFactory {
 
     lock.lock();
     try {
+      initStateWriter.state("Checking if running on JavaFX thread");
       if (Platform.isFxApplicationThread()) {
-        throw new InitializationException("Initialization should not be performed on JFX Thread.");
+        throw new InitializationException(
+            "Initialization should not be performed on JavaFX thread."
+        );
       }
 
       Platform.runLater(load);
+
+      initStateWriter.state("Waiting for YouTube player to be ready to play (up to 20 seconds)");
       if (!loaded.await(20, TimeUnit.SECONDS)) {
-        throw new InitializationException("YouTube Player did not load within 20 seconds.");
+        throw new InitializationException("YouTube player did not load within 20 seconds.");
       }
-    } catch (InterruptedException e) {
-      log.severe("Interrupted while waiting for YouTube player!");
-      throw new InitializationException(e);
     } finally {
       lock.unlock();
     }

@@ -1,5 +1,6 @@
 package com.github.bjoernpetersen.youtubeprovider;
 
+import com.github.bjoernpetersen.jmusicbot.InitStateWriter;
 import com.github.bjoernpetersen.jmusicbot.InitializationException;
 import com.github.bjoernpetersen.jmusicbot.PlaybackFactoryManager;
 import com.github.bjoernpetersen.jmusicbot.PlaybackSupplier;
@@ -46,7 +47,8 @@ public class YouTubeProvider implements Provider {
   }
 
   @Override
-  public void initialize(@Nonnull PlaybackFactoryManager manager) throws InitializationException {
+  public void initialize(@Nonnull InitStateWriter initStateWriter,
+      @Nonnull PlaybackFactoryManager manager) throws InitializationException {
     playbackFactory = manager.getFactory(YouTubePlaybackFactory.class);
     youtube = new YouTube.Builder(
         new NetHttpTransport(),
