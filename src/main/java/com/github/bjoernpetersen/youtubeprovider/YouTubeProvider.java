@@ -124,6 +124,7 @@ public class YouTubeProvider implements Provider {
       results = youtube.search().list(SEARCH_RESULT_PARTS)
           .setKey(apiKey)
           .setQ(id)
+          .setType("video")
           .execute().getItems();
     } catch (IOException e) {
       log.severe("Error looking up song: " + e);
