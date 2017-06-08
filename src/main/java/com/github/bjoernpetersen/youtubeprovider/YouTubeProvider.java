@@ -100,6 +100,7 @@ public class YouTubeProvider implements Provider {
       return youtube.search().list(SEARCH_RESULT_PARTS)
           .setKey(apiKey)
           .setQ(query)
+          .setType("video")
           .execute().getItems().stream()
           .map(this::getSongFromSearchResult)
           .collect(Collectors.toList());
