@@ -16,12 +16,14 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.SearchResult;
 import com.google.api.services.youtube.model.SearchResultSnippet;
+import com.google.api.services.youtube.model.Thumbnail;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class YouTubeProvider implements Provider {
 
@@ -89,8 +91,14 @@ public class YouTubeProvider implements Provider {
   }
 
   @Nonnull
-  private Song createSong(@Nonnull String id, @Nonnull String title, @Nonnull String description) {
-    return songBuilder.id(id).title(title).description(description).build();
+  private Song createSong(@Nonnull String id, @Nonnull String title, @Nonnull String description,
+      @Nullable String albumArtUrl) {
+    return songBuilder
+        .id(id)
+        .title(title)
+        .description(description)
+        .albumArtUrl(albumArtUrl)
+        .build();
   }
 
   @Nonnull
@@ -113,7 +121,13 @@ public class YouTubeProvider implements Provider {
   @Nonnull
   private Song getSongFromSearchResult(SearchResult result) {
     SearchResultSnippet snippet = result.getSnippet();
-    return createSong(result.getId().getVideoId(), snippet.getTitle(), snippet.getDescription());
+    Thumbnail medium = snippet.getThumbnails().getMedium();
+    return createSong(
+        result.getId().getVideoId(),
+        snippet.getTitle(),
+        snippet.getDescription(),
+        medium == null ? null : medium.getUrl()
+    );
   }
 
   @Nonnull
