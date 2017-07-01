@@ -2,6 +2,7 @@ package com.github.bjoernpetersen.youtubeprovider;
 
 import com.github.bjoernpetersen.jmusicbot.InitStateWriter;
 import com.github.bjoernpetersen.jmusicbot.InitializationException;
+import com.github.bjoernpetersen.jmusicbot.Loggable;
 import com.github.bjoernpetersen.jmusicbot.config.Config;
 import com.github.bjoernpetersen.jmusicbot.config.Config.Entry;
 import com.github.bjoernpetersen.jmusicbot.playback.Playback;
@@ -17,15 +18,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.scene.web.WebEngine;
 import javax.annotation.Nonnull;
 
-public class YouTubePlaybackFactory implements PlaybackFactory {
+public class YouTubePlaybackFactory implements Loggable, PlaybackFactory {
 
-  @Nonnull
-  private static final Logger log = Logger.getLogger(YouTubePlaybackFactory.class.getName());
   @Nonnull
   private static final String playerHtml = loadHtml("PlayerHtml.html");
 

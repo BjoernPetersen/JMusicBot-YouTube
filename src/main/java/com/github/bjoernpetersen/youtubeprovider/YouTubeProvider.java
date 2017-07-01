@@ -2,6 +2,7 @@ package com.github.bjoernpetersen.youtubeprovider;
 
 import com.github.bjoernpetersen.jmusicbot.InitStateWriter;
 import com.github.bjoernpetersen.jmusicbot.InitializationException;
+import com.github.bjoernpetersen.jmusicbot.Loggable;
 import com.github.bjoernpetersen.jmusicbot.PlaybackFactoryManager;
 import com.github.bjoernpetersen.jmusicbot.PlaybackSupplier;
 import com.github.bjoernpetersen.jmusicbot.Song;
@@ -25,13 +26,10 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class YouTubeProvider implements Provider {
+public class YouTubeProvider implements Loggable, Provider {
 
   @Nonnull
   private static final String SEARCH_RESULT_PARTS = "id,snippet";
-
-  @Nonnull
-  private static final Logger log = Logger.getLogger(YouTubeProvider.class.getName());
 
   private Song.Builder songBuilder;
 
@@ -113,7 +111,7 @@ public class YouTubeProvider implements Provider {
           .map(this::getSongFromSearchResult)
           .collect(Collectors.toList());
     } catch (IOException e) {
-      log.severe("IOException during search: " + e);
+      logSevere("IOException during search", e);
       return Collections.emptyList();
     }
   }
@@ -142,7 +140,7 @@ public class YouTubeProvider implements Provider {
           .setType("video")
           .execute().getItems();
     } catch (IOException e) {
-      log.severe("Error looking up song: " + e);
+      logSevere("Error looking up song", e);
       throw new NoSuchSongException(e);
     }
 
