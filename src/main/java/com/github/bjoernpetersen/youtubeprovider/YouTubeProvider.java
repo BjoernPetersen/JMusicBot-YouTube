@@ -21,7 +21,6 @@ import com.google.api.services.youtube.model.Thumbnail;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -111,7 +110,7 @@ public class YouTubeProvider implements Loggable, Provider {
           .map(this::getSongFromSearchResult)
           .collect(Collectors.toList());
     } catch (IOException e) {
-      logSevere("IOException during search", e);
+      logSevere(e, "IOException during search");
       return Collections.emptyList();
     }
   }
@@ -140,7 +139,7 @@ public class YouTubeProvider implements Loggable, Provider {
           .setType("video")
           .execute().getItems();
     } catch (IOException e) {
-      logSevere("Error looking up song", e);
+      logSevere(e, "Error looking up song");
       throw new NoSuchSongException(e);
     }
 
