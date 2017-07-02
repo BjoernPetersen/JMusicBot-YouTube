@@ -55,13 +55,16 @@ public class YouTubeProvider implements Loggable, Provider {
   @Override
   public void initialize(@Nonnull InitStateWriter initStateWriter,
       @Nonnull PlaybackFactoryManager manager) throws InitializationException {
+    initStateWriter.state("Retrieving PlaybackFactory");
     playbackFactory = manager.getFactory(YouTubePlaybackFactory.class);
+    initStateWriter.state("Creating API access object");
     youtube = new YouTube.Builder(
         new NetHttpTransport(),
         JacksonFactory.getDefaultInstance(),
         httpRequest -> {
         }
     ).setApplicationName("music-bot").build();
+    initStateWriter.state("Reading API key");
     apiKey = apiKeyEntry.get()
         .orElseThrow(() -> new InitializationException("Missing YouTube API key."));
     songBuilder = initializeSongBuilder();
