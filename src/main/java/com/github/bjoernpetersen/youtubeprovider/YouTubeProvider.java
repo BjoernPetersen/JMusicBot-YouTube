@@ -10,6 +10,7 @@ import com.github.bjoernpetersen.jmusicbot.SongLoader;
 import com.github.bjoernpetersen.jmusicbot.config.Config;
 import com.github.bjoernpetersen.jmusicbot.config.Config.Entry;
 import com.github.bjoernpetersen.jmusicbot.playback.Playback;
+import com.github.bjoernpetersen.jmusicbot.playback.PlaybackFactory;
 import com.github.bjoernpetersen.jmusicbot.provider.NoSuchSongException;
 import com.github.bjoernpetersen.jmusicbot.provider.Provider;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -21,6 +22,7 @@ import com.google.api.services.youtube.model.Thumbnail;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -43,6 +45,11 @@ public class YouTubeProvider implements Loggable, Provider {
   public List<? extends Entry> initializeConfigEntries(Config config) {
     apiKeyEntry = config.secret(getClass(), "apiKey", "YouTube API key");
     return Collections.singletonList(apiKeyEntry);
+  }
+
+  @Override
+  public Set<Class<? extends PlaybackFactory>> getPlaybackDependencies() {
+    return Collections.singleton(YouTubePlaybackFactory.class);
   }
 
   @Override
