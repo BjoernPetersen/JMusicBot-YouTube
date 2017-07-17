@@ -19,24 +19,27 @@ import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.SearchResult;
 import com.google.api.services.youtube.model.SearchResultSnippet;
 import com.google.api.services.youtube.model.Thumbnail;
+import com.google.api.services.youtube.model.Video;
 import java.io.IOException;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public class YouTubeProvider implements Loggable, Provider {
 
   @Nonnull
   private static final String SEARCH_RESULT_PARTS = "id,snippet";
-
-  private Song.Builder songBuilder;
+  @Nonnull
+  private static final String VIDEO_RESULT_PARTS = "contentDetails";
 
   private YouTubePlaybackFactory playbackFactory;
   private Config.StringEntry apiKeyEntry;
 
+  private Song.Builder builder;
   private YouTube youtube;
   private String apiKey;
 
@@ -67,7 +70,7 @@ public class YouTubeProvider implements Loggable, Provider {
     initStateWriter.state("Reading API key");
     apiKey = apiKeyEntry.get()
         .orElseThrow(() -> new InitializationException("Missing YouTube API key."));
-    songBuilder = initializeSongBuilder();
+    builder = initializeSongBuilder();
   }
 
   private Song.Builder initializeSongBuilder() {
@@ -94,47 +97,84 @@ public class YouTubeProvider implements Loggable, Provider {
     playbackFactory = null;
     youtube = null;
     apiKey = null;
-    songBuilder = null;
-  }
-
-  @Nonnull
-  private Song createSong(@Nonnull String id, @Nonnull String title, @Nonnull String description,
-      @Nullable String albumArtUrl) {
-    return songBuilder
-        .id(id)
-        .title(title)
-        .description(description)
-        .albumArtUrl(albumArtUrl)
-        .build();
+    builder = null;
   }
 
   @Nonnull
   @Override
   public List<Song> search(@Nonnull String query) {
+    if (query.trim().isEmpty()) {
+      return Collections.emptyList();
+    }
+    logFiner("Searching for songs. Query: " + query);
+    List<SearchResult> searchResults;
     try {
-      return youtube.search().list(SEARCH_RESULT_PARTS)
+      searchResults = youtube.search().list(SEARCH_RESULT_PARTS)
           .setKey(apiKey)
           .setQ(query)
           .setType("video")
-          .execute().getItems().stream()
-          .map(this::getSongFromSearchResult)
-          .collect(Collectors.toList());
+          .setMaxResults(100L)
+          .execute().getItems();
     } catch (IOException e) {
-      logSevere(e, "IOException during search");
+      logInfo(e, "IOException during search");
       return Collections.emptyList();
     }
+
+    return createSongs(searchResults);
   }
 
   @Nonnull
-  private Song getSongFromSearchResult(SearchResult result) {
-    SearchResultSnippet snippet = result.getSnippet();
+  private List<Song> createSongs(List<SearchResult> searchResults) {
+    List<Song> result = new ArrayList<>(searchResults.size());
+    while (!searchResults.isEmpty()) {
+      StringBuilder builder = new StringBuilder();
+      for (int index = 0; index < 50 && index < searchResults.size(); ++index) {
+        builder.append(searchResults.get(index).getId().getVideoId()).append(',');
+      }
+      builder.deleteCharAt(builder.length() - 1);
+
+      List<Video> videos;
+      try {
+        videos = youtube.videos().list(VIDEO_RESULT_PARTS)
+            .setKey(apiKey)
+            .setId(builder.toString())
+            .execute().getItems();
+      } catch (IOException e) {
+        logInfo(e, "IOException during video lookup");
+        return Collections.emptyList();
+      }
+
+      Iterator<SearchResult> resultIterator = searchResults.iterator();
+      Iterator<Video> videoIterator = videos.iterator();
+      while (videoIterator.hasNext()) {
+        result.add(createSong(resultIterator.next(), videoIterator.next()));
+      }
+
+      int size = searchResults.size();
+      if (size <= 50) {
+        searchResults = Collections.emptyList();
+      } else {
+        searchResults = searchResults.subList(50, size);
+      }
+    }
+    return result;
+  }
+
+  @Nonnull
+  private Song createSong(SearchResult searchResult, Video video) {
+    SearchResultSnippet snippet = searchResult.getSnippet();
     Thumbnail medium = snippet.getThumbnails().getMedium();
-    return createSong(
-        result.getId().getVideoId(),
-        snippet.getTitle(),
-        snippet.getDescription(),
-        medium == null ? null : medium.getUrl()
-    );
+    return builder
+        .id(searchResult.getId().getVideoId())
+        .title(snippet.getTitle())
+        .description(snippet.getDescription())
+        .duration(getDuration(video.getContentDetails().getDuration()))
+        .albumArtUrl(medium == null ? null : medium.getUrl())
+        .build();
+  }
+
+  private int getDuration(String encodedDuration) {
+    return (int) Duration.parse(encodedDuration).getSeconds();
   }
 
   @Nonnull
@@ -162,7 +202,7 @@ public class YouTubeProvider implements Loggable, Provider {
       throw new NoSuchSongException("Song with ID '" + id + "' does not exist.");
     }
 
-    return getSongFromSearchResult(result);
+    return createSongs(Collections.singletonList(result)).get(0);
   }
 
   @Nonnull
