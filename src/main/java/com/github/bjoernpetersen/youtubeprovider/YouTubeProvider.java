@@ -113,7 +113,7 @@ public class YouTubeProvider implements Loggable, Provider {
           .setKey(apiKey)
           .setQ(query)
           .setType("video")
-          .setMaxResults(100L)
+          .setMaxResults(50L)
           .execute().getItems();
     } catch (IOException e) {
       logInfo(e, "IOException during search");
