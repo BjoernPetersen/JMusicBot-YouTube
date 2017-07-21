@@ -40,6 +40,7 @@ public class YouTubePlaybackFactory implements Loggable, PlaybackFactory {
         return Support.YES;
       case ANDROID:
         // TODO support Android
+        return Support.NO;
       case UNKNOWN:
       default:
         return Support.MAYBE;
