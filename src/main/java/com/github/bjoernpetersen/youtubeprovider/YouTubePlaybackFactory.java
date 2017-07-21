@@ -49,6 +49,12 @@ public class YouTubePlaybackFactory implements Loggable, PlaybackFactory {
 
   @Nonnull
   @Override
+  public String getReadableName() {
+    return "YouTube PlaybackFactory";
+  }
+
+  @Nonnull
+  @Override
   public List<? extends Entry> initializeConfigEntries(@Nonnull Config config) {
     return Collections.emptyList();
   }
