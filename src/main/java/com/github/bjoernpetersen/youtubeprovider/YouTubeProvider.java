@@ -223,7 +223,7 @@ public class YouTubeProvider implements Loggable, Provider {
 
   @Nonnull
   @Override
-  public String getName() {
+  public String getId() {
     return "youtube";
   }
 
