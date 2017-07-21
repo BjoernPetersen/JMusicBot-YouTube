@@ -5,6 +5,7 @@ import com.github.bjoernpetersen.jmusicbot.InitializationException;
 import com.github.bjoernpetersen.jmusicbot.Loggable;
 import com.github.bjoernpetersen.jmusicbot.config.Config;
 import com.github.bjoernpetersen.jmusicbot.config.Config.Entry;
+import com.github.bjoernpetersen.jmusicbot.platform.Support;
 import com.github.bjoernpetersen.jmusicbot.playback.Playback;
 import com.github.bjoernpetersen.jmusicbot.playback.PlaybackFactory;
 import java.io.BufferedReader;
@@ -28,6 +29,22 @@ public class YouTubePlaybackFactory implements Loggable, PlaybackFactory {
   private static final String playerHtml = loadHtml("PlayerHtml.html");
 
   private WebEngine engine;
+
+  @Nonnull
+  @Override
+  public Support getSupport(
+      @Nonnull com.github.bjoernpetersen.jmusicbot.platform.Platform platform) {
+    switch (platform) {
+      case LINUX:
+      case WINDOWS:
+        return Support.YES;
+      case ANDROID:
+        // TODO support Android
+      case UNKNOWN:
+      default:
+        return Support.MAYBE;
+    }
+  }
 
   @Nonnull
   @Override

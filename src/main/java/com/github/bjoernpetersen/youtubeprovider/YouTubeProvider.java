@@ -9,6 +9,8 @@ import com.github.bjoernpetersen.jmusicbot.Song;
 import com.github.bjoernpetersen.jmusicbot.SongLoader;
 import com.github.bjoernpetersen.jmusicbot.config.Config;
 import com.github.bjoernpetersen.jmusicbot.config.Config.Entry;
+import com.github.bjoernpetersen.jmusicbot.platform.Platform;
+import com.github.bjoernpetersen.jmusicbot.platform.Support;
 import com.github.bjoernpetersen.jmusicbot.playback.Playback;
 import com.github.bjoernpetersen.jmusicbot.playback.PlaybackFactory;
 import com.github.bjoernpetersen.jmusicbot.provider.NoSuchSongException;
@@ -42,6 +44,20 @@ public class YouTubeProvider implements Loggable, Provider {
   private Song.Builder builder;
   private YouTube youtube;
   private String apiKey;
+
+  @Nonnull
+  @Override
+  public Support getSupport(@Nonnull Platform platform) {
+    switch (platform) {
+      case LINUX:
+      case WINDOWS:
+      case ANDROID:
+        return Support.YES;
+      case UNKNOWN:
+      default:
+        return Support.MAYBE;
+    }
+  }
 
   @Nonnull
   @Override
