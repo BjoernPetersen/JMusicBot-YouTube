@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
-public class YouTubeProvider implements Loggable, Provider {
+public class YouTubeProvider implements Loggable, YouTubeProviderBase {
 
   @Nonnull
   private static final String SEARCH_RESULT_PARTS = "id,snippet";
@@ -44,6 +44,24 @@ public class YouTubeProvider implements Loggable, Provider {
   private Song.Builder builder;
   private YouTube youtube;
   private String apiKey;
+
+  @Nonnull
+  @Override
+  public Class<? extends Provider> getBaseClass() {
+    return YouTubeProviderBase.class;
+  }
+
+  @Nonnull
+  @Override
+  public String getApiKey() {
+    return apiKey;
+  }
+
+  @Nonnull
+  @Override
+  public YouTube getYoutube() {
+    return youtube;
+  }
 
   @Nonnull
   @Override
