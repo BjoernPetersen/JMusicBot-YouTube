@@ -15,21 +15,8 @@ jobs:
         - ~/.m2
     - run:
         command: |
-          mkdir ~/android
-          cd ~/android
-          wget -q https://dl.google.com/android/android-sdk_r24.4.1-linux.tgz -O android-sdk.tgz
-          tar -xvzf android-sdk.tgz --no-same-owner
-          rm -f android-sdk.tgz
-          export PATH=$PATH:~/android/android-sdk-linux/tools
-          export PATH=$PATH:~/android/android-sdk-linux/platform-tools
-          export ANDROID_HOME=~/android/android-sdk-linux
-          echo y | android update sdk --no-ui --all --filter platform-tools | grep 'package installed'
-          echo y | android update sdk --no-ui --all --filter android-19 | grep 'package installed'
-          cd ~
-          git clone https://github.com/simpligility/maven-android-sdk-deployer.git sdk-deployer
-          cd sdk-deployer
-          mvn install -P 4.4 || true
-          cd ~/app
+          chmod +x install-android.sh
+          ./install-android.sh
         name: Retrieving android core library
         when: always
     - run:
