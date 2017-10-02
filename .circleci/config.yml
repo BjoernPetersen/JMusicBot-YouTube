@@ -39,6 +39,18 @@ jobs:
     - store_artifacts:
         path: target/site/
 
+    - deploy:
+        command: mvn package -DskipTests
+        name: Building .jar
+    - run:
+        command: |
+          mkdir jar
+          cp target/*jar-with-dependencies.jar jar/musicbot-youtube.jar
+        name: Renaming .jar
+        when: on_success
+    - store_artifacts:
+        path: jar/
+
     - save_cache:
         key: v1-{{ checksum "pom.xml" }}
         paths:
