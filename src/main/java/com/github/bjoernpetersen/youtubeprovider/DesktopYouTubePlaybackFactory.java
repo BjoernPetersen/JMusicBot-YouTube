@@ -107,7 +107,7 @@ public class DesktopYouTubePlaybackFactory implements Loggable, YouTubePlaybackF
   }
 
   @Override
-  public void destructConfigEntries() {
+  public void dereferenceConfigEntries() {
   }
 
   @Override

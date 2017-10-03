@@ -80,7 +80,7 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
   @Nonnull
   @Override
   public List<? extends Entry> initializeConfigEntries(Config config) {
-    apiKeyEntry = config.secret(getClass(), "apiKey", "YouTube API key");
+    apiKeyEntry = config.new StringEntry(getClass(), "apiKey", "YouTube API key", true);
     return Collections.singletonList(apiKeyEntry);
   }
 
@@ -102,8 +102,10 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
         }
     ).setApplicationName("music-bot").build();
     initStateWriter.state("Reading API key");
-    apiKey = apiKeyEntry.get()
-        .orElseThrow(() -> new InitializationException("Missing YouTube API key."));
+    apiKey = apiKeyEntry.getValue();
+    if (apiKey == null) {
+      throw new InitializationException("Missing YouTube API key.");
+    }
     builder = initializeSongBuilder();
   }
 
@@ -121,8 +123,7 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
   }
 
   @Override
-  public void destructConfigEntries() {
-    apiKeyEntry.tryDestruct();
+  public void dereferenceConfigEntries() {
     apiKeyEntry = null;
   }
 

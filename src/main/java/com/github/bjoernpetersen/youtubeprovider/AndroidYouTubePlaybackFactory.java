@@ -111,7 +111,7 @@ public class AndroidYouTubePlaybackFactory implements Loggable, YouTubePlaybackF
   }
 
   @Override
-  public void destructConfigEntries() {
+  public void dereferenceConfigEntries() {
   }
 
   @Override
