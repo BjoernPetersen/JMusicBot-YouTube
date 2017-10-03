@@ -124,6 +124,7 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
 
   @Override
   public void dereferenceConfigEntries() {
+    apiKeyEntry.destruct();
     apiKeyEntry = null;
   }
 
