@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.bjoernpetersen</groupId>
   <artifactId>jmusic-youtube</artifactId>
-  <version>0.7.0-SNAPSHOT</version>
+  <version>0.7.0</version>
   <url>https://github.com/BjoernPetersen/JMusic-YouTube</url>
   <description>TODO</description>
   <name>${project.groupId}:${project.artifactId}</name>
@@ -45,36 +45,42 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <junit.version>4.12</junit.version>
+    <jsr.version>3.0.2</jsr.version>
+    <musicbot.version>0.10.0</musicbot.version>
+    <youtubeapi.version>v3-rev183-1.22.0</youtubeapi.version>
+    <android.version>4.4.2_r4</android.version>
   </properties>
   <dependencies>
     <dependency>
       <artifactId>junit</artifactId>
       <groupId>junit</groupId>
-      <version>4.12</version>
+      <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.code.findbugs</groupId>
       <artifactId>jsr305</artifactId>
-      <version>3.0.2</version>
+      <version>${jsr.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.github.bjoernpetersen</groupId>
       <artifactId>musicbot</artifactId>
-      <version>0.10.0-SNAPSHOT</version>
+      <version>${musicbot.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.google.apis</groupId>
       <artifactId>google-api-services-youtube</artifactId>
-      <version>v3-rev183-1.22.0</version>
+      <version>${youtubeapi.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>android</groupId>
       <artifactId>android</artifactId>
-      <version>4.4.2_r4</version>
+      <version>${android.version}</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
