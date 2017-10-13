@@ -84,6 +84,21 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
     return Collections.singletonList(apiKeyEntry);
   }
 
+  @Nonnull
+  @Override
+  public List<? extends Entry> getMissingConfigEntries() {
+    if (apiKeyEntry.getValue() == null) {
+      return Collections.singletonList(apiKeyEntry);
+    }
+    return Collections.emptyList();
+  }
+
+  @Override
+  public void destructConfigEntries() {
+    apiKeyEntry.destruct();
+    apiKeyEntry = null;
+  }
+
   @Override
   public Set<Class<? extends PlaybackFactory>> getPlaybackDependencies() {
     return Collections.singleton(YouTubePlaybackFactory.class);
@@ -120,12 +135,6 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
         })
         .songLoader(SongLoader.DUMMY)
         .provider(this);
-  }
-
-  @Override
-  public void dereferenceConfigEntries() {
-    apiKeyEntry.destruct();
-    apiKeyEntry = null;
   }
 
   @Override

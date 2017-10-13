@@ -7,7 +7,7 @@ import com.github.bjoernpetersen.jmusicbot.InitializationException;
 import com.github.bjoernpetersen.jmusicbot.Loggable;
 import com.github.bjoernpetersen.jmusicbot.config.Config;
 import com.github.bjoernpetersen.jmusicbot.config.Config.Entry;
-import com.github.bjoernpetersen.jmusicbot.platform.ContextHolder;
+import com.github.bjoernpetersen.jmusicbot.platform.HostServices;
 import com.github.bjoernpetersen.jmusicbot.platform.Support;
 import com.github.bjoernpetersen.jmusicbot.playback.Playback;
 import com.github.bjoernpetersen.jmusicbot.playback.PlaybackFactory;
@@ -29,6 +29,7 @@ public class AndroidYouTubePlaybackFactory implements Loggable, YouTubePlaybackF
   @Nonnull
   private static final String playerHtml = loadHtml("PlayerHtml.html");
 
+  private HostServices hostServices;
   private WebView webView;
   private AndroidChromeClient client;
 
@@ -56,7 +57,19 @@ public class AndroidYouTubePlaybackFactory implements Loggable, YouTubePlaybackF
   @Nonnull
   @Override
   public List<? extends Entry> initializeConfigEntries(@Nonnull Config config) {
+    this.hostServices = config.getHostServices();
     return Collections.emptyList();
+  }
+
+  @Nonnull
+  @Override
+  public List<? extends Entry> getMissingConfigEntries() {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public void destructConfigEntries() {
+    this.hostServices = null;
   }
 
   @Nonnull
@@ -72,7 +85,7 @@ public class AndroidYouTubePlaybackFactory implements Loggable, YouTubePlaybackF
     Condition loaded = lock.newCondition();
 
     Runnable load = () -> {
-      webView = new WebView(ContextHolder.INSTANCE.getContext());
+      webView = new WebView(hostServices.contextSupplier().supply());
       webView.getSettings().setJavaScriptEnabled(true);
       client = new AndroidChromeClient(message -> {
         if ("loaded".equals(message)) {
@@ -108,10 +121,6 @@ public class AndroidYouTubePlaybackFactory implements Loggable, YouTubePlaybackF
     } finally {
       lock.unlock();
     }
-  }
-
-  @Override
-  public void dereferenceConfigEntries() {
   }
 
   @Override

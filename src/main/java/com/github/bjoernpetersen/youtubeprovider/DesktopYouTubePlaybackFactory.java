@@ -5,6 +5,7 @@ import com.github.bjoernpetersen.jmusicbot.InitializationException;
 import com.github.bjoernpetersen.jmusicbot.Loggable;
 import com.github.bjoernpetersen.jmusicbot.config.Config;
 import com.github.bjoernpetersen.jmusicbot.config.Config.Entry;
+import com.github.bjoernpetersen.jmusicbot.platform.HostServices;
 import com.github.bjoernpetersen.jmusicbot.platform.Support;
 import com.github.bjoernpetersen.jmusicbot.playback.Playback;
 import com.github.bjoernpetersen.jmusicbot.playback.PlaybackFactory;
@@ -61,6 +62,16 @@ public class DesktopYouTubePlaybackFactory implements Loggable, YouTubePlaybackF
 
   @Nonnull
   @Override
+  public List<? extends Entry> getMissingConfigEntries() {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public void destructConfigEntries() {
+  }
+
+  @Nonnull
+  @Override
   public Collection<Class<? extends PlaybackFactory>> getBases() {
     return Collections.singleton(YouTubePlaybackFactory.class);
   }
@@ -104,10 +115,6 @@ public class DesktopYouTubePlaybackFactory implements Loggable, YouTubePlaybackF
     } finally {
       lock.unlock();
     }
-  }
-
-  @Override
-  public void dereferenceConfigEntries() {
   }
 
   @Override
