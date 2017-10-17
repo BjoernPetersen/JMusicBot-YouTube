@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.bjoernpetersen</groupId>
   <artifactId>jmusic-youtube</artifactId>
-  <version>0.7.0</version>
+  <version>0.7.1</version>
   <url>https://github.com/BjoernPetersen/JMusic-YouTube</url>
   <description>TODO</description>
   <name>${project.groupId}:${project.artifactId}</name>
@@ -48,7 +48,7 @@
 
     <junit.version>4.12</junit.version>
     <jsr.version>3.0.2</jsr.version>
-    <musicbot.version>0.10.0</musicbot.version>
+    <musicbot.version>0.11.0</musicbot.version>
     <youtubeapi.version>v3-rev183-1.22.0</youtubeapi.version>
     <android.version>4.4.2_r4</android.version>
   </properties>
