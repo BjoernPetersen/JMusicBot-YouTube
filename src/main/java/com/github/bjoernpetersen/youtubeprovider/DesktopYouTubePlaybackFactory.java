@@ -5,7 +5,6 @@ import com.github.bjoernpetersen.jmusicbot.InitializationException;
 import com.github.bjoernpetersen.jmusicbot.Loggable;
 import com.github.bjoernpetersen.jmusicbot.config.Config;
 import com.github.bjoernpetersen.jmusicbot.config.Config.Entry;
-import com.github.bjoernpetersen.jmusicbot.platform.HostServices;
 import com.github.bjoernpetersen.jmusicbot.platform.Support;
 import com.github.bjoernpetersen.jmusicbot.playback.Playback;
 import com.github.bjoernpetersen.jmusicbot.playback.PlaybackFactory;
@@ -119,8 +118,9 @@ public class DesktopYouTubePlaybackFactory implements Loggable, YouTubePlaybackF
 
   @Override
   public void close() throws IOException {
-    engine.load("about:blank");
-    engine = null;
+    WebEngine engine = this.engine;
+    Platform.runLater(() -> engine.load("about:blank"));
+    this.engine = null;
   }
 
   @Nonnull
