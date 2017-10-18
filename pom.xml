@@ -48,7 +48,7 @@
 
     <junit.version>4.12</junit.version>
     <jsr.version>3.0.2</jsr.version>
-    <musicbot.version>0.11.0</musicbot.version>
+    <musicbot.version>0.12.0-SNAPSHOT</musicbot.version>
     <youtubeapi.version>v3-rev183-1.22.0</youtubeapi.version>
     <android.version>4.4.2_r4</android.version>
   </properties>

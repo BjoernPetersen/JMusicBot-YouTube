@@ -5,6 +5,9 @@ import com.github.bjoernpetersen.jmusicbot.InitializationException;
 import com.github.bjoernpetersen.jmusicbot.Loggable;
 import com.github.bjoernpetersen.jmusicbot.config.Config;
 import com.github.bjoernpetersen.jmusicbot.config.Config.Entry;
+import com.github.bjoernpetersen.jmusicbot.config.ui.ChoiceBox;
+import com.github.bjoernpetersen.jmusicbot.config.ui.DefaultStringConverter;
+import com.github.bjoernpetersen.jmusicbot.config.ui.StringChoice;
 import com.github.bjoernpetersen.jmusicbot.platform.Support;
 import com.github.bjoernpetersen.jmusicbot.playback.Playback;
 import com.github.bjoernpetersen.jmusicbot.playback.PlaybackFactory;
@@ -12,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -19,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.scene.web.WebEngine;
 import javax.annotation.Nonnull;
@@ -29,6 +34,7 @@ public class DesktopYouTubePlaybackFactory implements Loggable, YouTubePlaybackF
   private static final String playerHtml = loadHtml("PlayerHtml.html");
 
   private WebEngine engine;
+  private Config.StringEntry quality;
 
   @Nonnull
   @Override
@@ -56,17 +62,46 @@ public class DesktopYouTubePlaybackFactory implements Loggable, YouTubePlaybackF
   @Nonnull
   @Override
   public List<? extends Entry> initializeConfigEntries(@Nonnull Config config) {
-    return Collections.emptyList();
+    this.quality = config.new StringEntry(
+        getClass(),
+        "quality",
+        "Stream quality",
+        false,
+        Quality.defaultVal.name(),
+        new ChoiceBox<>(
+            () -> Arrays.stream(Quality.values())
+                .map(Quality::name)
+                .map(q -> new StringChoice(q, q))
+                .collect(Collectors.toList()),
+            DefaultStringConverter.INSTANCE,
+            false
+        ),
+        s -> {
+          try {
+            Quality.valueOf(s);
+            return null;
+          } catch (IllegalArgumentException e) {
+            return "Invalid value";
+          }
+        }
+    );
+    return Collections.singletonList(quality);
   }
 
   @Nonnull
   @Override
   public List<? extends Entry> getMissingConfigEntries() {
-    return Collections.emptyList();
+    if (quality.isNullOrError()) {
+      return Collections.singletonList(quality);
+    } else {
+      return Collections.emptyList();
+    }
   }
 
   @Override
   public void destructConfigEntries() {
+    quality.destruct();
+    quality = null;
   }
 
   @Nonnull
@@ -125,7 +160,7 @@ public class DesktopYouTubePlaybackFactory implements Loggable, YouTubePlaybackF
 
   @Nonnull
   public Playback createPlayback(String id) throws IOException {
-    return new YouTubePlayback(engine, id);
+    return new YouTubePlayback(engine, quality.getValue(), id);
   }
 
   @Nonnull

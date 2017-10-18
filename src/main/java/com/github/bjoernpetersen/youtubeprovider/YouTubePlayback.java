@@ -19,14 +19,15 @@ public class YouTubePlayback extends AbstractPlayback implements Loggable {
   @Nonnull
   private final WebEngine engine;
 
-  YouTubePlayback(@Nonnull WebEngine engine, @Nonnull String videoId) throws IOException {
+  YouTubePlayback(@Nonnull WebEngine engine, @Nonnull String quality, @Nonnull String videoId)
+      throws IOException {
     super();
     this.videoId = videoId;
     this.engine = engine;
 
     Runnable prepare = () -> {
       logFiner("CueVideo with ID " + videoId);
-      engine.executeScript("player.cueVideoById('" + videoId + "');");
+      engine.executeScript("player.cueVideoById('" + videoId + "', 0, '" + quality + "');");
       // We're abusing the alert handler to get signals from the JS code.
       engine.setOnAlert(event -> {
         if (PLAYER_STOP_CODE.equals(event.getData())) {
