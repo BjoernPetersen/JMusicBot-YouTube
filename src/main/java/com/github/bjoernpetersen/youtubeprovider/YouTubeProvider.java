@@ -22,6 +22,7 @@ import com.google.api.services.youtube.model.SearchResult;
 import com.google.api.services.youtube.model.SearchResultSnippet;
 import com.google.api.services.youtube.model.Thumbnail;
 import com.google.api.services.youtube.model.Video;
+import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 public class YouTubeProvider implements Loggable, YouTubeProviderBase {
@@ -165,43 +167,39 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
       return Collections.emptyList();
     }
 
+    searchResults = searchResults.stream()
+        .filter(s -> s.getId().getVideoId() != null)
+        .collect(Collectors.toList());
+
     return createSongs(searchResults);
   }
 
   @Nonnull
   private List<Song> createSongs(List<SearchResult> searchResults) {
     List<Song> result = new ArrayList<>(searchResults.size());
-    while (!searchResults.isEmpty()) {
-      StringBuilder builder = new StringBuilder();
-      for (int index = 0; index < 50 && index < searchResults.size(); ++index) {
-        builder.append(searchResults.get(index).getId().getVideoId()).append(',');
-      }
-      builder.deleteCharAt(builder.length() - 1);
+    for (List<SearchResult> partition : Lists.partition(searchResults, 50)) {
+      String ids = partition.stream()
+          .map(r -> r.getId().getVideoId())
+          .collect(Collectors.joining(","));
 
       List<Video> videos;
       try {
         videos = youtube.videos().list(VIDEO_RESULT_PARTS)
             .setKey(apiKey)
-            .setId(builder.toString())
+            .setId(ids)
             .execute().getItems();
       } catch (IOException e) {
         logInfo(e, "IOException during video lookup");
         return Collections.emptyList();
       }
 
-      Iterator<SearchResult> resultIterator = searchResults.iterator();
+      Iterator<SearchResult> resultIterator = partition.iterator();
       Iterator<Video> videoIterator = videos.iterator();
       while (videoIterator.hasNext()) {
         result.add(createSong(resultIterator.next(), videoIterator.next()));
       }
-
-      int size = searchResults.size();
-      if (size <= 50) {
-        searchResults = Collections.emptyList();
-      } else {
-        searchResults = searchResults.subList(50, size);
-      }
     }
+
     return result;
   }
 
