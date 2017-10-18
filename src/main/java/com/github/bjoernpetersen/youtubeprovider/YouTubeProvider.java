@@ -22,6 +22,9 @@ import com.google.api.services.youtube.model.SearchResult;
 import com.google.api.services.youtube.model.SearchResultSnippet;
 import com.google.api.services.youtube.model.Thumbnail;
 import com.google.api.services.youtube.model.Video;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.time.Duration;
@@ -30,8 +33,11 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class YouTubeProvider implements Loggable, YouTubeProviderBase {
 
@@ -46,6 +52,8 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
   private Song.Builder builder;
   private YouTube youtube;
   private String apiKey;
+
+  private LoadingCache<String, Song> cache;
 
   @Nonnull
   @Override
@@ -124,6 +132,16 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
       throw new InitializationException("Missing YouTube API key.");
     }
     builder = initializeSongBuilder();
+    cache = CacheBuilder.newBuilder()
+        .initialCapacity(128)
+        .maximumSize(1024)
+        .expireAfterAccess(30, TimeUnit.MINUTES)
+        .build(new CacheLoader<String, Song>() {
+          @Override
+          public Song load(@Nonnull String key) throws Exception {
+            return lookupSong(key);
+          }
+        });
   }
 
   private Song.Builder initializeSongBuilder() {
@@ -167,7 +185,7 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
       return Collections.emptyList();
     }
 
-    searchResults = searchResults.stream()
+    searchResults = searchResults.subList(0, Math.min(searchResults.size(), 50)).stream()
         .filter(s -> s.getId().getVideoId() != null)
         .collect(Collectors.toList());
 
@@ -196,7 +214,9 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
       Iterator<SearchResult> resultIterator = partition.iterator();
       Iterator<Video> videoIterator = videos.iterator();
       while (videoIterator.hasNext()) {
-        result.add(createSong(resultIterator.next(), videoIterator.next()));
+        Song song = createSong(resultIterator.next(), videoIterator.next());
+        result.add(song);
+        cache.put(song.getId(), song);
       }
     }
 
@@ -220,10 +240,8 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
     return (int) Duration.parse(encodedDuration).getSeconds();
   }
 
-  @Nonnull
-  @Override
-  public Song lookup(@Nonnull String id) throws NoSuchSongException {
-    // TODO cache search results / lookups
+  @Nullable
+  private Song lookupSong(@Nonnull String id) {
     List<SearchResult> results;
     try {
       results = youtube.search().list(SEARCH_RESULT_PARTS)
@@ -232,20 +250,34 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
           .setType("video")
           .execute().getItems();
     } catch (IOException e) {
-      logSevere(e, "Error looking up song");
-      throw new NoSuchSongException(e);
+      logInfo(e, "Error looking up song");
+      return null;
     }
 
     if (results.isEmpty()) {
-      throw new NoSuchSongException("Song with ID '" + id + "' does not exist.");
+      return null;
     }
 
     SearchResult result = results.get(0);
     if (!result.getId().getVideoId().equals(id)) {
-      throw new NoSuchSongException("Song with ID '" + id + "' does not exist.");
+      return null;
     }
 
     return createSongs(Collections.singletonList(result)).get(0);
+  }
+
+  @Nonnull
+  @Override
+  public Song lookup(@Nonnull String id) throws NoSuchSongException {
+    try {
+      Song result = cache.get(id);
+      if (result == null) {
+        throw new NoSuchSongException("Song with ID '" + id + "' does not exist.");
+      }
+      return result;
+    } catch (ExecutionException e) {
+      throw new NoSuchSongException(e.getCause());
+    }
   }
 
   @Nonnull
