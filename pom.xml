@@ -29,6 +29,11 @@
   </scm>
   <repositories>
     <repository>
+      <id>data-local</id>
+      <name>data</name>
+      <url>file://${project.basedir}/lib/</url>
+    </repository>
+    <repository>
       <id>ossrh</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
       <releases>
@@ -49,8 +54,8 @@
     <junit.version>4.12</junit.version>
     <jsr.version>3.0.2</jsr.version>
     <musicbot.version>0.13.0-SNAPSHOT</musicbot.version>
-    <youtubeapi.version>v3-rev183-1.22.0</youtubeapi.version>
-    <android.version>4.4.2_r4</android.version>
+    <youtubeapi.version>v3-rev186-1.23.0</youtubeapi.version>
+    <android.version>26</android.version>
   </properties>
   <dependencies>
     <dependency>
@@ -78,7 +83,7 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>android</groupId>
+      <groupId>com.google.android</groupId>
       <artifactId>android</artifactId>
       <version>${android.version}</version>
       <scope>provided</scope>

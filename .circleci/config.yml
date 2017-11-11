@@ -14,12 +14,6 @@ jobs:
         paths:
         - ~/.m2
     - run:
-        command: |
-          chmod +x install-android.sh
-          ./install-android.sh
-        name: Retrieving android core library
-        when: always
-    - run:
         command: mvn -U test
         name: Running unit tests
         when: always
