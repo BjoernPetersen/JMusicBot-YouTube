@@ -178,6 +178,7 @@ public class YouTubeProvider implements Loggable, YouTubeProviderBase {
           .setKey(apiKey)
           .setQ(query)
           .setType("video")
+          .setVideoEmbeddable("true")
           .setMaxResults(50L)
           .execute().getItems();
     } catch (IOException e) {
