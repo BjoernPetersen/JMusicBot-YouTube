@@ -199,7 +199,7 @@ class YouTubeProviderImpl : YouTubeProvider {
     }
 
     override fun supplyPlayback(song: Song, resource: Resource): Playback {
-        return playback.getPlayback(song.id, resource)
+        return playback.createPlayback(song.id, resource)
     }
 
     override fun close() {}

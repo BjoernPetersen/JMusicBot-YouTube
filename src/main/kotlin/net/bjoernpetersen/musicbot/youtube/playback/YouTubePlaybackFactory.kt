@@ -9,5 +9,5 @@ import net.bjoernpetersen.musicbot.spi.plugin.PlaybackFactory
 interface YouTubePlaybackFactory : PlaybackFactory {
 
     fun load(videoId: String): Resource
-    fun getPlayback(videoId: String, resource: Resource): Playback
+    fun createPlayback(videoId: String, resource: Resource): Playback
 }
