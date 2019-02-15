@@ -13,7 +13,6 @@ import mu.KotlinLogging
 import net.bjoernpetersen.musicbot.api.config.Config
 import net.bjoernpetersen.musicbot.api.config.NonnullConfigChecker
 import net.bjoernpetersen.musicbot.api.config.PasswordBox
-import net.bjoernpetersen.musicbot.api.config.TextBox
 import net.bjoernpetersen.musicbot.api.player.Song
 import net.bjoernpetersen.musicbot.spi.loader.Resource
 import net.bjoernpetersen.musicbot.spi.plugin.NoSuchSongException
@@ -53,15 +52,7 @@ class YouTubeProviderImpl : YouTubeProvider {
     private lateinit var cache: LoadingCache<String, Song>
 
     override fun createStateEntries(state: Config) {}
-    override fun createConfigEntries(config: Config): List<Config.Entry<*>> {
-        applicationNameEntry = config.StringEntry(
-            "applicationName",
-            "OAuth application name",
-            NonnullConfigChecker,
-            TextBox)
-
-        return listOf(applicationNameEntry)
-    }
+    override fun createConfigEntries(config: Config): List<Config.Entry<*>> = emptyList()
 
     override fun createSecretEntries(secrets: Config): List<Config.Entry<*>> {
         apiKeyEntry = secrets.StringEntry(
