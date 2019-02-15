@@ -17,10 +17,11 @@ plugins {
 }
 
 group = "com.github.bjoernpetersen"
-version = "0.11.0"
+version = "0.12.0"
 
 repositories {
     jcenter()
+    maven("https://oss.sonatype.org/content/repositories/snapshots")
 }
 
 idea {
@@ -84,11 +85,14 @@ tasks {
 }
 
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
     implementation(
         group = "io.github.microutils",
         name = "kotlin-logging",
-        version = Lib.KOTLIN_LOGGING)
+        version = Lib.KOTLIN_LOGGING) {
+        exclude("org.slf4j")
+        exclude("org.jetbrains")
+        exclude("org.jetbrains.kotlin")
+    }
     compileOnly(
         group = "com.github.bjoernpetersen",
         name = "musicbot",
@@ -97,7 +101,9 @@ dependencies {
     implementation(
         group = "com.google.apis",
         name = "google-api-services-youtube",
-        version = Lib.YOUTUBE_API)
+        version = Lib.YOUTUBE_API) {
+        exclude("com.google.guava")
+    }
 
     testImplementation(
         group = "org.junit.jupiter",
