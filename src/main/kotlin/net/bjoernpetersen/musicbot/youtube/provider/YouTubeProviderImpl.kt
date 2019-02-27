@@ -38,8 +38,6 @@ class YouTubeProviderImpl : YouTubeProvider {
 
     private val logger = KotlinLogging.logger { }
 
-    private lateinit var applicationNameEntry: Config.StringEntry
-
     private lateinit var apiKeyEntry: Config.StringEntry
     override val apiKey: String
         get() = apiKeyEntry.get()!!
