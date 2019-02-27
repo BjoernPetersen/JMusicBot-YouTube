@@ -65,6 +65,14 @@ tasks {
     }
 
     @Suppress("UNUSED_VARIABLE")
+    val publishedJar by creating(Jar::class) {
+        archiveBaseName.set("published-api")
+        from(sourceSets["main"].output) {
+            exclude("**/*Impl*", "**/META-INF/services/*")
+        }
+    }
+
+    @Suppress("UNUSED_VARIABLE")
     val javadocJar by creating(Jar::class) {
         dependsOn("dokkaJavadoc")
         archiveClassifier.set("javadoc")
@@ -118,7 +126,7 @@ dependencies {
 publishing {
     publications {
         create("Maven", MavenPublication::class) {
-            from(components["java"])
+            artifact(tasks.getByName("publishedJar"))
             artifact(tasks.getByName("javadocJar"))
             artifact(tasks.getByName("sourcesJar"))
 
