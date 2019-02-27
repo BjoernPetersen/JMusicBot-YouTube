@@ -76,7 +76,7 @@ class YouTubeProviderImpl : YouTubeProvider {
 
         cache = CacheBuilder.newBuilder()
             .initialCapacity(128)
-            .maximumSize(1024)
+            .maximumSize(2048)
             .expireAfterAccess(30, TimeUnit.MINUTES)
             .build(object : CacheLoader<String, Song>() {
                 @Throws(Exception::class)
