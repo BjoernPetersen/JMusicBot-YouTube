@@ -47,7 +47,8 @@ class YouTubeProviderImpl : YouTubeProvider {
     override lateinit var api: YouTube
         private set
 
-    private lateinit var cache: LoadingCache<String, Song>
+    private lateinit var songCache: LoadingCache<String, Song>
+    private lateinit var searchCache: LoadingCache<String, List<Song>>
 
     override fun createStateEntries(state: Config) {}
     override fun createConfigEntries(config: Config): List<Config.Entry<*>> = emptyList()
@@ -74,7 +75,7 @@ class YouTubeProviderImpl : YouTubeProvider {
             .setApplicationName("music-bot")
             .build()
 
-        cache = CacheBuilder.newBuilder()
+        songCache = CacheBuilder.newBuilder()
             .initialCapacity(128)
             .maximumSize(2048)
             .expireAfterAccess(30, TimeUnit.MINUTES)
@@ -84,31 +85,17 @@ class YouTubeProviderImpl : YouTubeProvider {
                     return lookupSong(key) ?: throw NoSuchSongException(key, YouTubeProvider::class)
                 }
             })
-    }
 
-    override fun search(query: String, offset: Int): List<Song> {
-        if (query.isBlank()) {
-            return emptyList()
-        }
-
-        val searchResults: List<SearchResult> = try {
-            api.search().list(SEARCH_RESULT_PARTS)
-                .setKey(apiKey)
-                .setQ(query)
-                .setType(SEARCH_TYPE)
-                .setMaxResults(50L)
-                .execute()
-                .items
-        } catch (e: IOException) {
-            logger.error(e) { "IOException during search" }
-            return emptyList()
-        }
-
-        val fixedResults = searchResults
-            .subList(0, Math.min(searchResults.size, 50))
-            .filter { s -> s.id.videoId != null }
-
-        return createSongs(fixedResults)
+        searchCache = CacheBuilder.newBuilder()
+            .initialCapacity(128)
+            .maximumSize(512)
+            .expireAfterAccess(10, TimeUnit.MINUTES)
+            .build(object : CacheLoader<String, List<Song>>() {
+                @Throws(Exception::class)
+                override fun load(key: String): List<Song> {
+                    return actualSearch(key, 0)
+                }
+            })
     }
 
     private fun createSongs(searchResults: List<SearchResult>): List<Song> {
@@ -116,10 +103,13 @@ class YouTubeProviderImpl : YouTubeProvider {
         val toBeLookedUp = ArrayList<SearchResult>(searchResults.size)
 
         searchResults.forEach {
-            val cached = cache.getIfPresent(it.id.videoId)
+            val cached = songCache.getIfPresent(it.id.videoId)
             if (cached != null) result.add(cached)
             else toBeLookedUp.add(it)
         }
+
+        if (toBeLookedUp.isNotEmpty())
+            logger.debug { "Looking up search result IDs, size: ${toBeLookedUp.size}" }
 
         for (partition in Lists.partition(toBeLookedUp, 50)) {
             val ids = partition.joinToString(",") { r -> r.id.videoId }
@@ -140,7 +130,7 @@ class YouTubeProviderImpl : YouTubeProvider {
             while (videoIterator.hasNext()) {
                 val song = createSong(resultIterator.next(), videoIterator.next())
                 result.add(song)
-                cache.put(song.id, song)
+                songCache.put(song.id, song)
             }
         }
 
@@ -164,15 +154,61 @@ class YouTubeProviderImpl : YouTubeProvider {
         return Duration.parse(encodedDuration).seconds.toInt()
     }
 
+    override fun search(query: String, offset: Int): List<Song> {
+        val trimmedQuery = query.trim()
+        return when {
+            trimmedQuery.isEmpty() -> emptyList()
+            offset == 0 -> try {
+                searchCache.get(trimmedQuery)
+            } catch (e: ExecutionException) {
+                logger.warn(e) { "Error during search for $trimmedQuery" }
+                emptyList<Song>()
+            }
+            else -> actualSearch(trimmedQuery, offset).also {
+                searchCache.put(trimmedQuery, it)
+            }
+        }
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun actualSearch(query: String, offset: Int): List<Song> {
+        if (query.isBlank()) {
+            return emptyList()
+        }
+
+        logger.debug { "Actually searching with offset $offset: $query" }
+
+        val searchResults: List<SearchResult> = try {
+            api.search().list(SEARCH_RESULT_PARTS)
+                .setKey(apiKey)
+                .setQ(query)
+                .setType(SEARCH_TYPE)
+                .setMaxResults(50L)
+                .execute()
+                .items
+        } catch (e: IOException) {
+            logger.error(e) { "IOException during search" }
+            return emptyList()
+        }
+
+        val fixedResults = searchResults
+            .subList(0, Math.min(searchResults.size, 50))
+            .filter { s -> s.id.videoId != null }
+
+        return createSongs(fixedResults)
+    }
+
     override fun lookup(id: String): Song {
         try {
-            return cache.get(id) ?: throw NoSuchSongException(id, YouTubeProvider::class)
+            return songCache.get(id) ?: throw NoSuchSongException(id, YouTubeProvider::class)
         } catch (e: ExecutionException) {
             throw NoSuchSongException(id, YouTubeProvider::class, e.cause!!)
         }
     }
 
     private fun lookupSong(id: String): Song? {
+        logger.debug { "Looking up ID $id" }
+
         val results: List<SearchResult> = try {
             api.search().list(SEARCH_RESULT_PARTS)
                 .setKey(apiKey)
