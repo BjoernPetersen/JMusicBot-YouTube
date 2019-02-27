@@ -113,7 +113,15 @@ class YouTubeProviderImpl : YouTubeProvider {
 
     private fun createSongs(searchResults: List<SearchResult>): List<Song> {
         val result = ArrayList<Song>(searchResults.size)
-        for (partition in Lists.partition(searchResults, 50)) {
+        val toBeLookedUp = ArrayList<SearchResult>(searchResults.size)
+
+        searchResults.forEach {
+            val cached = cache.getIfPresent(it.id.videoId)
+            if (cached != null) result.add(cached)
+            else toBeLookedUp.add(it)
+        }
+
+        for (partition in Lists.partition(toBeLookedUp, 50)) {
             val ids = partition.joinToString(",") { r -> r.id.videoId }
 
             val videos: List<Video> = try {
