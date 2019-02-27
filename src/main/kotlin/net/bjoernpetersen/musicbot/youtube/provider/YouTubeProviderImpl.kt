@@ -59,7 +59,8 @@ class YouTubeProviderImpl : YouTubeProvider {
             "apiKey",
             "YouTube API key",
             NonnullConfigChecker,
-            PasswordBox)
+            PasswordBox
+        )
 
         return listOf(apiKeyEntry)
     }
@@ -70,7 +71,8 @@ class YouTubeProviderImpl : YouTubeProvider {
             .Builder(
                 NetHttpTransport(),
                 JacksonFactory.getDefaultInstance(),
-                null)
+                null
+            )
             .setApplicationName("music-bot")
             .build()
 
@@ -156,7 +158,8 @@ class YouTubeProviderImpl : YouTubeProvider {
             title = snippet.title,
             description = snippet.description,
             duration = getDuration(video.contentDetails.duration),
-            albumArtUrl = medium?.url)
+            albumArtUrl = medium?.url
+        )
     }
 
     private fun getDuration(encodedDuration: String): Int {
