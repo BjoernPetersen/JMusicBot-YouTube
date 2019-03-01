@@ -99,20 +99,20 @@ class YouTubeProviderImpl : YouTubeProvider {
     }
 
     private fun createSongs(searchResults: List<SearchResult>): List<Song> {
-        val result = ArrayList<Song>(searchResults.size)
-        val toBeLookedUp = ArrayList<SearchResult>(searchResults.size)
+        val result = Array<Song?>(searchResults.size) { null }
+        val toBeLookedUp = ArrayList<Pair<Int, SearchResult>>(searchResults.size)
 
-        searchResults.forEach {
-            val cached = songCache.getIfPresent(it.id.videoId)
-            if (cached != null) result.add(cached)
-            else toBeLookedUp.add(it)
+        searchResults.forEachIndexed { index, searchResult ->
+            val cached = songCache.getIfPresent(searchResult.id.videoId)
+            if (cached != null) result[index] = cached
+            else toBeLookedUp.add(index to searchResult)
         }
 
         if (toBeLookedUp.isNotEmpty())
             logger.debug { "Looking up search result IDs, size: ${toBeLookedUp.size}" }
 
         for (partition in Lists.partition(toBeLookedUp, 50)) {
-            val ids = partition.joinToString(",") { r -> r.id.videoId }
+            val ids = partition.joinToString(",") { pair -> pair.second.id.videoId }
 
             val videos: List<Video> = try {
                 api.videos().list(VIDEO_RESULT_PARTS)
@@ -125,16 +125,17 @@ class YouTubeProviderImpl : YouTubeProvider {
                 return emptyList()
             }
 
-            val resultIterator = partition.iterator()
+            val resultPairIterator = partition.iterator()
             val videoIterator = videos.iterator()
             while (videoIterator.hasNext()) {
-                val song = createSong(resultIterator.next(), videoIterator.next())
-                result.add(song)
+                val resultPair = resultPairIterator.next()
+                val song = createSong(resultPair.second, videoIterator.next())
+                result[resultPair.first] = song
                 songCache.put(song.id, song)
             }
         }
 
-        return result
+        return result.map { it!! }
     }
 
     private fun createSong(searchResult: SearchResult, video: Video): Song {
