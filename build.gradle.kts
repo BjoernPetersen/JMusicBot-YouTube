@@ -8,7 +8,6 @@ plugins {
     kotlin("jvm") version Plugin.KOTLIN
 
     id("org.jetbrains.dokka") version Plugin.DOKKA
-    id("com.github.spotbugs") version Plugin.SPOTBUGS_PLUGIN
 
     signing
     `maven-publish`
@@ -21,23 +20,17 @@ version = "0.14.0-SNAPSHOT"
 
 repositories {
     jcenter()
-    maven("https://oss.sonatype.org/content/repositories/snapshots")
+    maven("https://oss.sonatype.org/content/repositories/snapshots") {
+        mavenContent {
+            snapshotsOnly()
+        }
+    }
 }
 
 idea {
     module {
         isDownloadJavadoc = true
     }
-}
-
-spotbugs {
-    isIgnoreFailures = true
-    toolVersion = Plugin.SPOTBUGS_TOOL
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 tasks {
@@ -93,34 +86,35 @@ tasks {
 }
 
 dependencies {
-    implementation(
-        group = "io.github.microutils",
-        name = "kotlin-logging",
-        version = Lib.KOTLIN_LOGGING) {
-        exclude("org.slf4j")
-        exclude("org.jetbrains")
-        exclude("org.jetbrains.kotlin")
-    }
     compileOnly(
         group = "com.github.bjoernpetersen",
         name = "musicbot",
-        version = Lib.MUSICBOT)
+        version = Lib.MUSICBOT
+    )
 
     implementation(
         group = "com.google.apis",
         name = "google-api-services-youtube",
-        version = Lib.YOUTUBE_API) {
+        version = Lib.YOUTUBE_API
+    ) {
         exclude("com.google.guava")
     }
 
     testImplementation(
+        group = "com.github.bjoernpetersen",
+        name = "musicbot",
+        version = Lib.MUSICBOT
+    )
+    testImplementation(
         group = "org.junit.jupiter",
         name = "junit-jupiter-api",
-        version = Lib.JUNIT)
+        version = Lib.JUNIT
+    )
     testRuntime(
         group = "org.junit.jupiter",
         name = "junit-jupiter-engine",
-        version = Lib.JUNIT)
+        version = Lib.JUNIT
+    )
 }
 
 publishing {
@@ -164,8 +158,10 @@ publishing {
                 val releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
                 val snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
                 // change to point to your repo, e.g. http://my.org/repo
-                url = uri(if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl
-                else releasesRepoUrl)
+                url = uri(
+                    if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl
+                    else releasesRepoUrl
+                )
                 credentials {
                     username = project.properties["ossrh.username"]?.toString()
                     password = project.properties["ossrh.password"]?.toString()

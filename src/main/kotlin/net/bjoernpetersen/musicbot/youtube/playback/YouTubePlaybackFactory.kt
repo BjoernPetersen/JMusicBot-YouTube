@@ -8,6 +8,6 @@ import net.bjoernpetersen.musicbot.spi.plugin.PlaybackFactory
 @Base
 interface YouTubePlaybackFactory : PlaybackFactory {
 
-    fun load(videoId: String): Resource
-    fun createPlayback(videoId: String, resource: Resource): Playback
+    suspend fun load(videoId: String): Resource
+    suspend fun createPlayback(videoId: String, resource: Resource): Playback
 }
