@@ -36,8 +36,8 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 import kotlin.math.min
 
-private const val SEARCH_RESULT_PARTS = "id,snippet"
-private const val VIDEO_RESULT_PARTS = "contentDetails"
+private const val SEARCH_RESULT_PARTS = "id"
+private const val VIDEO_RESULT_PARTS = "id,snippet,contentDetails"
 private const val SEARCH_TYPE = "video"
 
 class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
@@ -50,7 +50,7 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
 
     private val job = Job()
     override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Default + job
+        get() = Dispatchers.IO + job
 
     private lateinit var apiKeyEntry: Config.StringEntry
     override val apiKey: String
@@ -121,44 +121,47 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
             })
     }
 
-    private suspend fun createSongs(searchResults: List<SearchResult>): List<Song> {
-        val result = Array<Deferred<Song>?>(searchResults.size) { null }
-        val toBeLookedUp = ArrayList<Pair<Int, SearchResult>>(searchResults.size)
+    override suspend fun lookupBatch(ids: List<String>): List<Song> {
+        val result = Array<Deferred<Song>?>(ids.size) { null }
+        val toBeLookedUp = ArrayList<IndexedValue<String>>(ids.size)
 
-        searchResults.forEachIndexed { index, searchResult ->
-            val cached = songCache.getIfPresent(searchResult.id.videoId)
+        ids.forEachIndexed { index, id ->
+            val cached = songCache.getIfPresent(id)
             if (cached != null) result[index] = cached
-            else toBeLookedUp.add(index to searchResult)
+            else toBeLookedUp.add(IndexedValue(index, id))
         }
 
-        if (toBeLookedUp.isNotEmpty())
-            logger.debug { "Looking up search result IDs, size: ${toBeLookedUp.size}" }
+        if (toBeLookedUp.isNotEmpty()) {
+            logger.debug { "Looking up songs, size: ${toBeLookedUp.size}" }
 
-        try {
-            withContext(coroutineContext) {
-                for (partition in Lists.partition(toBeLookedUp, 50)) {
-                    val ids = partition.joinToString(",") { pair -> pair.second.id.videoId }
+            try {
+                withContext(coroutineContext) {
+                    for (partition: List<IndexedValue<String>> in Lists.partition(toBeLookedUp, 50)) {
+                        val idsString = partition.joinToString(",") { pair -> pair.value }
 
-                    val videos: List<Video> = api.videos().list(VIDEO_RESULT_PARTS)
-                        .setKey(apiKey)
-                        .setId(ids)
-                        .execute()
-                        .items
+                        val videos: List<Video> = api.videos().list(VIDEO_RESULT_PARTS)
+                            .setKey(apiKey)
+                            .setId(idsString)
+                            .execute()
+                            .items
 
-                    val resultPairIterator = partition.iterator()
-                    val videoIterator = videos.iterator()
-                    while (videoIterator.hasNext()) {
-                        val resultPair = resultPairIterator.next()
-                        val song = createSong(resultPair.second, videoIterator.next())
-                        val deferredSong = CompletableDeferred(song)
-                        result[resultPair.first] = deferredSong
-                        songCache.put(song.id, deferredSong)
+                        partition
+                            .zip(videos) { (index, id), video -> Triple(index, id, video) }
+                            .forEach { (index, id, video) ->
+                                if (id != video.id) {
+                                    throw IOException("Not all songs found")
+                                }
+                                val song = createSong(video)
+                                val deferredSong = CompletableDeferred(song)
+                                result[index] = deferredSong
+                                songCache.put(song.id, deferredSong)
+                            }
                     }
                 }
+            } catch (e: IOException) {
+                logger.error(e) { "IOException during video lookup" }
+                return emptyList()
             }
-        } catch (e: IOException) {
-            logger.error(e) { "IOException during video lookup" }
-            return emptyList()
         }
 
         return withContext(coroutineContext) {
@@ -166,12 +169,12 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
         }
     }
 
-    private fun createSong(searchResult: SearchResult, video: Video): Song {
-        val snippet = searchResult.snippet
+    private fun createSong(video: Video): Song {
+        val snippet = video.snippet
         val medium = snippet.thumbnails.medium
         return Song(
             provider = this,
-            id = searchResult.id.videoId,
+            id = video.id,
             title = snippet.title,
             description = snippet.description,
             duration = getDuration(video.contentDetails.duration),
@@ -225,7 +228,7 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
             .subList(max(0, min(offset, searchResults.size - 1)), min(searchResults.size, 50))
             .filter { s -> s.id.videoId != null }
 
-        return createSongs(fixedResults)
+        return lookupBatch(fixedResults.map { it.id.videoId })
     }
 
     override suspend fun lookup(id: String): Song {
@@ -235,12 +238,11 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
     private suspend fun lookupSong(id: String): Song? {
         logger.debug { "Looking up ID $id" }
 
-        val results: List<SearchResult> = try {
+        val results: List<Video> = try {
             withContext(coroutineContext) {
-                api.search().list(SEARCH_RESULT_PARTS)
+                api.videos().list(VIDEO_RESULT_PARTS)
                     .setKey(apiKey)
-                    .setQ(id)
-                    .setType(SEARCH_TYPE)
+                    .setId(id)
                     .execute()
                     .items
             }
@@ -253,9 +255,9 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
             return null
         }
 
-        val result = results[0]
-        return if (result.id.videoId != id) null
-        else createSongs(listOf(result))[0]
+        val result = results.firstOrNull()
+        return if (result?.id != id) null
+        else createSong(result)
     }
 
     override suspend fun loadSong(song: Song): Resource {
