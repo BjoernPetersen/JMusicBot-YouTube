@@ -6,7 +6,6 @@ import com.google.api.services.youtube.YouTube
 import com.google.api.services.youtube.model.SearchResult
 import com.google.api.services.youtube.model.Video
 import com.google.common.cache.CacheBuilder
-import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.google.common.collect.Lists
 import kotlinx.coroutines.CompletableDeferred
@@ -14,8 +13,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import net.bjoernpetersen.musicbot.api.config.Config
@@ -93,32 +90,15 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
             .initialCapacity(128)
             .maximumSize(2048)
             .expireAfterAccess(30, TimeUnit.MINUTES)
-            .build(object : CacheLoader<String, Deferred<Song>>() {
-                @Throws(Exception::class)
-                override fun load(key: String): Deferred<Song> {
-                    return runBlocking {
-                        async(coroutineContext) {
-                            lookupSong(key)
-                                ?: throw NoSuchSongException(key, YouTubeProvider::class)
-                        }
-                    }
-                }
+            .build(AsyncLoader(this) {
+                lookupSong(it) ?: throw NoSuchSongException(it, YouTubeProvider::class)
             })
 
         searchCache = CacheBuilder.newBuilder()
             .initialCapacity(128)
             .maximumSize(512)
             .expireAfterAccess(10, TimeUnit.MINUTES)
-            .build(object : CacheLoader<String, Deferred<List<Song>>>() {
-                @Throws(Exception::class)
-                override fun load(key: String): Deferred<List<Song>> {
-                    return runBlocking {
-                        async(coroutineContext) {
-                            actualSearch(key, 0)
-                        }
-                    }
-                }
-            })
+            .build(AsyncLoader(this) { actualSearch(it, 0) })
     }
 
     override suspend fun lookupBatch(ids: List<String>): List<Song> {
