@@ -27,6 +27,10 @@ repositories {
     }
 }
 
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor(1, TimeUnit.MINUTES)
+}
+
 idea {
     module {
         isDownloadJavadoc = true
@@ -90,7 +94,9 @@ dependencies {
         group = "com.github.bjoernpetersen",
         name = "musicbot",
         version = Lib.MUSICBOT
-    )
+    ) {
+        isChanging = Lib.MUSICBOT.contains("SNAPSHOT")
+    }
 
     implementation(
         group = "com.google.apis",
