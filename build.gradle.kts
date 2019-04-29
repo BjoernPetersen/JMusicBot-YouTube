@@ -105,6 +105,11 @@ dependencies {
     ) {
         exclude("com.google.guava")
     }
+    implementation(
+        group = "com.github.ben-manes.caffeine",
+        name = "caffeine",
+        version = Lib.CAFFEINE
+    )
 
     testImplementation(
         group = "com.github.bjoernpetersen",

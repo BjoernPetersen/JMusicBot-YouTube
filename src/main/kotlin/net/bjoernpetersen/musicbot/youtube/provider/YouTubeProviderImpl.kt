@@ -1,12 +1,12 @@
 package net.bjoernpetersen.musicbot.youtube.provider
 
+import com.github.benmanes.caffeine.cache.Caffeine
+import com.github.benmanes.caffeine.cache.LoadingCache
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.youtube.YouTube
 import com.google.api.services.youtube.model.SearchResult
 import com.google.api.services.youtube.model.Video
-import com.google.common.cache.CacheBuilder
-import com.google.common.cache.LoadingCache
 import com.google.common.collect.Lists
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -58,8 +58,8 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
     override lateinit var api: YouTube
         private set
 
-    private lateinit var songCache: LoadingCache<String, Deferred<Song>>
-    private lateinit var searchCache: LoadingCache<String, Deferred<List<Song>>>
+    private lateinit var songCache: LoadingCache<String, Deferred<Song?>>
+    private lateinit var searchCache: LoadingCache<String, Deferred<List<Song>?>>
 
     override fun createStateEntries(state: Config) {}
     override fun createConfigEntries(config: Config): List<Config.Entry<*>> = emptyList()
@@ -86,15 +86,14 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
             .setApplicationName("music-bot")
             .build()
 
-        songCache = CacheBuilder.newBuilder()
+        songCache = Caffeine.newBuilder()
             .initialCapacity(128)
             .maximumSize(2048)
-            .expireAfterAccess(30, TimeUnit.MINUTES)
             .build(AsyncLoader(this) {
-                lookupSong(it) ?: throw NoSuchSongException(it, YouTubeProvider::class)
+                lookupSong(it)
             })
 
-        searchCache = CacheBuilder.newBuilder()
+        searchCache = Caffeine.newBuilder()
             .initialCapacity(128)
             .maximumSize(512)
             .expireAfterAccess(10, TimeUnit.MINUTES)
@@ -102,7 +101,7 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
     }
 
     override suspend fun lookupBatch(ids: List<String>): List<Song> {
-        val result = Array<Deferred<Song>?>(ids.size) { null }
+        val result = Array<Deferred<Song?>?>(ids.size) { null }
         val toBeLookedUp = ArrayList<IndexedValue<String>>(ids.size)
 
         ids.forEachIndexed { index, id ->
@@ -145,7 +144,7 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
         }
 
         return withContext(coroutineContext) {
-            result.map { it!!.await() }
+            result.mapNotNull { it!!.await() }
         }
     }
 
@@ -170,12 +169,7 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
         val trimmedQuery = query.trim()
         return when {
             trimmedQuery.isEmpty() -> emptyList()
-            offset == 0 -> try {
-                searchCache.get(trimmedQuery).await()
-            } catch (e: Exception) {
-                logger.warn(e) { "Error during search for $trimmedQuery" }
-                emptyList<Song>()
-            }
+            offset == 0 -> searchCache.get(trimmedQuery)?.await() ?: emptyList()
             else -> actualSearch(trimmedQuery, offset).also {
                 searchCache.put(trimmedQuery, CompletableDeferred(it))
             }
@@ -212,7 +206,7 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
     }
 
     override suspend fun lookup(id: String): Song {
-        return songCache.get(id).await()
+        return songCache.get(id)?.await() ?: throw NoSuchSongException(id)
     }
 
     private suspend fun lookupSong(id: String): Song? {

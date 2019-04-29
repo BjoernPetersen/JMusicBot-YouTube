@@ -1,6 +1,6 @@
 package net.bjoernpetersen.musicbot.youtube.provider
 
-import com.google.common.cache.CacheLoader
+import com.github.benmanes.caffeine.cache.CacheLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -9,7 +9,7 @@ import kotlinx.coroutines.async
 internal class AsyncLoader<K, V>(
     private val scope: CoroutineScope,
     private val syncLoad: suspend (key: K) -> V
-) : CacheLoader<K, Deferred<V>>() {
+) : CacheLoader<K, Deferred<V>> {
     override fun load(key: K): Deferred<V> {
         return scope.async {
             syncLoad(key)
