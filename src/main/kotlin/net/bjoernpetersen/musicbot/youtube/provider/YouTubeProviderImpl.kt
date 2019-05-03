@@ -23,6 +23,7 @@ import net.bjoernpetersen.musicbot.spi.loader.Resource
 import net.bjoernpetersen.musicbot.spi.plugin.NoSuchSongException
 import net.bjoernpetersen.musicbot.spi.plugin.Playback
 import net.bjoernpetersen.musicbot.spi.plugin.management.InitStateWriter
+import net.bjoernpetersen.musicbot.youtube.cache.AsyncLoader
 import net.bjoernpetersen.musicbot.youtube.playback.YouTubePlaybackFactory
 import java.io.IOException
 import java.time.Duration

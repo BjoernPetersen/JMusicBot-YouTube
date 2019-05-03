@@ -1,4 +1,4 @@
-package net.bjoernpetersen.musicbot.youtube.provider
+package net.bjoernpetersen.musicbot.youtube.cache
 
 import com.github.benmanes.caffeine.cache.CacheLoader
 import kotlinx.coroutines.CoroutineScope
