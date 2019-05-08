@@ -1,33 +1,87 @@
-version: 2
-jobs:
-  build:
+version: 2.1
+
+executors:
+  jfx:
     docker:
-      - image: openjdk:8-jdk
-    working_directory: ~/app
+      - image: nishtahir/openjfx:8-jdk
     environment:
       GRADLE_OPTS: -Dorg.gradle.daemon=false
-    steps:
-      - checkout
-      - run: chmod +x gradlew
 
+commands:
+  with_cache:
+    parameters:
+      steps:
+        type: steps
+    steps:
       - restore_cache:
           keys:
-            - v1-{{ checksum "build.gradle.kts" }}-{{ checksum "buildSrc/src/main/kotlin/Plugin.kt" }}-{{ checksum "buildSrc/src/main/kotlin/Lib.kt" }}
-            - v1-{{ checksum "build.gradle.kts" }}-{{ checksum "buildSrc/src/main/kotlin/Plugin.kt" }}
-            - v1-{{ checksum "build.gradle.kts" }}
-            - v1-
+            - v2-{{ checksum "build.gradle.kts" }}-{{ checksum "buildSrc/src/main/kotlin/Plugin.kt" }}-{{ checksum "buildSrc/src/main/kotlin/Lib.kt" }}
+            - v2-{{ checksum "build.gradle.kts" }}-{{ checksum "buildSrc/src/main/kotlin/Plugin.kt" }}
+            - v2-{{ checksum "build.gradle.kts" }}
+            - v2-
+      - steps: << parameters.steps >>
 
-      - run: ./gradlew dependencies
+jobs:
+  compile:
+    executor: jfx
+    steps:
+      - checkout
+      - with_cache:
+          steps:
+            - run:
+                command: ./gradlew classes
+                name: Compiling main classes
+            - save_cache:
+                key: v2-{{ checksum "build.gradle.kts" }}-{{ checksum "buildSrc/src/main/kotlin/Plugin.kt" }}-{{ checksum "buildSrc/src/main/kotlin/Lib.kt" }}
+                paths:
+                  - ~/.gradle
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - build
+                  - buildSrc/build
 
-      - save_cache:
-          key: v1-{{ checksum "build.gradle.kts" }}-{{ checksum "buildSrc/src/main/kotlin/Plugin.kt" }}-{{ checksum "buildSrc/src/main/kotlin/Lib.kt" }}
-          paths:
-            - ~/.gradle
+  check:
+    executor: jfx
+    steps:
+      - checkout
+      - with_cache:
+          steps:
+            - attach_workspace:
+                at: .
+            - run:
+                command: ./gradlew check
+                name: Running tests
+            - store_test_results:
+                path: build/test-results
+            - store_artifacts:
+                path: build/reports
 
-      - run:
-          command: ./gradlew test
-          name: Running unit tests
-          when: always
+  build:
+    executor: jfx
+    steps:
+      - checkout
+      - with_cache:
+          steps:
+            - attach_workspace:
+                at: .
+            - run:
+                command: ./gradlew shadowJar
+                name: Building jar
+            - run:
+                command: mv build/libs/musicbot-youtube-*.jar build/distributions/musicbot-youtube.jar
+                name: Renaming jar
+            - store_artifacts:
+                path: build/libs
+                destination: dist
 
-      - store_test_results:
-          path: build/test-results
+workflows:
+  full_workflow:
+    jobs:
+      - compile
+      - check:
+          requires:
+            - compile
+      - build:
+          requires:
+            - compile
