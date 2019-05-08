@@ -1,9 +1,9 @@
 version: 2.1
 
 executors:
-  jfx:
+  jdk:
     docker:
-      - image: nishtahir/openjfx:8-jdk
+      - image: openjdk:8-jdk-slim
     environment:
       GRADLE_OPTS: -Dorg.gradle.daemon=false
 
@@ -23,7 +23,7 @@ commands:
 
 jobs:
   compile:
-    executor: jfx
+    executor: jdk
     steps:
       - checkout
       - with_cache:
@@ -42,7 +42,7 @@ jobs:
                   - buildSrc/build
 
   check:
-    executor: jfx
+    executor: jdk
     steps:
       - checkout
       - with_cache:
@@ -58,7 +58,7 @@ jobs:
                 path: build/reports
 
   build:
-    executor: jfx
+    executor: jdk
     steps:
       - checkout
       - with_cache:
