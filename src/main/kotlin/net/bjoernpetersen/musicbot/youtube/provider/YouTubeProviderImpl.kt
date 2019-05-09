@@ -25,6 +25,7 @@ import net.bjoernpetersen.musicbot.spi.plugin.Playback
 import net.bjoernpetersen.musicbot.spi.plugin.management.InitStateWriter
 import net.bjoernpetersen.musicbot.youtube.cache.AsyncLoader
 import net.bjoernpetersen.musicbot.youtube.playback.YouTubePlaybackFactory
+import net.bjoernpetersen.musicbot.youtube.playback.YouTubeResource
 import java.io.IOException
 import java.time.Duration
 import java.util.ArrayList
@@ -240,7 +241,7 @@ class YouTubeProviderImpl : YouTubeProvider, CoroutineScope {
     }
 
     override suspend fun supplyPlayback(song: Song, resource: Resource): Playback {
-        return playback.createPlayback(song.id, resource)
+        return playback.createPlayback(resource as YouTubeResource)
     }
 
     override suspend fun close() {

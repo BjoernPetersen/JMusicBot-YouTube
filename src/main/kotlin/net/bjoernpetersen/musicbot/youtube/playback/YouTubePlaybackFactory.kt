@@ -8,6 +8,11 @@ import net.bjoernpetersen.musicbot.spi.plugin.PlaybackFactory
 @Base
 interface YouTubePlaybackFactory : PlaybackFactory {
 
-    suspend fun load(videoId: String): Resource
+    suspend fun load(videoId: String): YouTubeResource
+    @Deprecated("Use overloaded method with YouTubeReference instead")
     suspend fun createPlayback(videoId: String, resource: Resource): Playback
+
+    suspend fun createPlayback(resource: YouTubeResource): Playback
 }
+
+abstract class YouTubeResource(val videoId: String) : Resource
