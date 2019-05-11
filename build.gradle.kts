@@ -1,7 +1,10 @@
+import org.gradle.kotlin.dsl.version
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+    id("com.diffplug.gradle.spotless") version Plugin.SPOTLESS
+
     id("com.github.ben-manes.versions") version Plugin.VERSIONS
     idea
 
@@ -34,6 +37,17 @@ configurations.all {
 idea {
     module {
         isDownloadJavadoc = true
+    }
+}
+
+spotless {
+    kotlin {
+        ktlint()
+        endWithNewline()
+    }
+    kotlinGradle {
+        ktlint()
+        endWithNewline()
     }
 }
 
