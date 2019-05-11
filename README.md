@@ -1,4 +1,4 @@
-# MusicBot-YouTube
+# MusicBot-YouTube [![GitHub (pre-)release](https://img.shields.io/github/release/BjoernPetersen/MusicBot-YouTube/all.svg)](https://github.com/BjoernPetersen/MusicBot-YouTube/releases) [![GitHub license](https://img.shields.io/github/license/BjoernPetersen/MusicBot-YouTube.svg)](https://github.com/BjoernPetersen/MusicBot-YouTube/blob/master/LICENSE)
 
 Provider for songs from YouTube.
 
